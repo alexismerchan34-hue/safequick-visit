@@ -3,53 +3,114 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Safe Quick - Registro de Visita</title>
+  <title>Safe Quick - Verificación de visita</title>
 
   <style>
     body {
+      margin: 0;
+      padding: 20px;
       background-color: #0B1020;
-      color: white;
+      color: #ffffff;
       font-family: Arial, sans-serif;
       text-align: center;
-      padding: 20px;
     }
 
     h1 {
-      margin-top: 20px;
-      font-size: 26px;
+      font-size: 22px;
+      margin-bottom: 8px;
     }
 
-    video {
+    p {
+      font-size: 14px;
+      color: #cfd3ff;
+      margin-top: 0;
+    }
+
+    video, img {
       margin-top: 20px;
       width: 100%;
-      max-width: 350px;
-      border-radius: 12px;
+      max-width: 360px;
+      border-radius: 16px;
       border: 2px solid #5A6CF3;
+    }
+
+    button {
+      margin-top: 20px;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 999px;
+      background-color: #5A6CF3;
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: bold;
+    }
+
+    #previewContainer {
+      margin-top: 16px;
     }
   </style>
 </head>
 
 <body>
-  <h1>Bienvenido a Safe Quick</h1>
-  <p>Por favor toma una selfie para validar tu visita.</p>
+  <h1>Verificación de visita</h1>
+  <p>Permite el acceso a la cámara y toma una selfie para continuar.</p>
 
   <video id="camera" autoplay playsinline></video>
+  <canvas id="canvas" style="display:none;"></canvas>
+
+  <button id="takePhoto">Tomar selfie</button>
+
+  <div id="previewContainer"></div>
 
   <script>
+    const video = document.getElementById("camera");
+    const canvas = document.getElementById("canvas");
+    const btn = document.getElementById("takePhoto");
+    const previewContainer = document.getElementById("previewContainer");
+
+    let streamRef = null;
+
     async function startCamera() {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: "user" }, // Cámara frontal
+          video: { facingMode: "user" },
           audio: false
         });
-
-        const video = document.getElementById("camera");
+        streamRef = stream;
         video.srcObject = stream;
       } catch (err) {
-        alert("No se pudo acceder a la cámara. Permite el acceso para continuar.");
+        alert("No se pudo acceder a la cámara. Activa el permiso para continuar.");
         console.error(err);
       }
     }
+
+    btn.addEventListener("click", () => {
+      if (!video.srcObject) return;
+
+      const width = video.videoWidth;
+      const height = video.videoHeight;
+
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(video, 0, 0, width, height);
+
+      const dataUrl = canvas.toDataURL("image/png");
+
+      // Mostrar la foto tomada debajo
+      previewContainer.innerHTML = "";
+      const img = document.createElement("img");
+      img.src = dataUrl;
+      previewContainer.appendChild(img);
+
+      alert("Selfie tomada ✅ (por ahora solo se muestra en pantalla).");
+
+      // Opcional: parar la cámara después de tomar la foto
+      if (streamRef) {
+        streamRef.getTracks().forEach(t => t.stop());
+      }
+    });
 
     startCamera();
   </script>
